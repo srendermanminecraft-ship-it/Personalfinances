@@ -10,7 +10,7 @@ import * as XLSX from 'xlsx'
 export default function App() {
   const [vistaActual, setVistaActual] = useState<'INICIO' | 'CLIENTES' | 'PASIVOS' | 'DETALLE_CLIENTE' | 'AJUSTES'>('INICIO')
 
-  // --- ESTADOS DE DATOS (Con tipos explícitos para evitar error 'never') ---
+  // --- ESTADOS DE DATOS ---
   const [categorias, setCategorias] = useState<any[]>([])
   const [patrimonio, setPatrimonio] = useState<number>(0)
   const [ingresosMes, setIngresosMes] = useState<number>(0)
@@ -36,10 +36,10 @@ export default function App() {
   
   const [modalPasivoNuevo, setModalPasivoNuevo] = useState<boolean>(false)
   const [tipoPasivoNuevo, setTipoPasivoNuevo] = useState<'TARJETA' | 'SUSCRIPCION'>('TARJETA')
-  const [modalEditarTarjeta, setModalEditarTarjeta] = useState<boolean>(false)
-  const [modalEditarSuscripcion, setModalEditarSuscripcion] = useState<boolean>(false)
+  const [, setModalEditarTarjeta] = useState<boolean>(false)
+  const [, setModalEditarSuscripcion] = useState<boolean>(false)
   const [tarjetaEditando, setTarjetaEditando] = useState<any>(null)
-  const [suscripcionEditando, setSuscripcionEditando] = useState<any>(null)
+  const [, setSuscripcionEditando] = useState<any>(null)
 
   const [modalDeudaTarjeta, setModalDeudaTarjeta] = useState<boolean>(false)
   const [tipoOperacionTarjeta, setTipoOperacionTarjeta] = useState<'SUMAR' | 'RESTAR'>('SUMAR')
@@ -58,9 +58,9 @@ export default function App() {
   const [telNuevo, setTelNuevo] = useState<string>('')
   const [diaCorte, setDiaCorte] = useState<string>('1')
   const [diaPago, setDiaPago] = useState<string>('1')
-  const [limiteEditar, setLimiteEditar] = useState<string>('')
-  const [diaCorteEditar, setDiaCorteEditar] = useState<string>('')
-  const [diaPagoEditar, setDiaPagoEditar] = useState<string>('')
+  const [, setLimiteEditar] = useState<string>('')
+  const [, setDiaCorteEditar] = useState<string>('')
+  const [, setDiaPagoEditar] = useState<string>('')
   const [fechaFacturacion, setFechaFacturacion] = useState<string>('')
   const [cargando, setCargando] = useState<boolean>(false)
 
@@ -156,7 +156,7 @@ export default function App() {
     const { data } = await supabase.from('clients').select('*, debts(*)')
     if (data) {
       setListaClientes(data)
-      if (clienteSeleccionado) setClienteSeleccionado(data.find((c: any) => c.id === clienteSeleccionado.id))
+      if (clienteSeleccionado) setClienteSeleccionado(data.find((c: any) => c.id === clienteSeleccionado?.id))
     }
   }
 
@@ -174,7 +174,7 @@ export default function App() {
 
   const guardarDeuda = async (e: React.FormEvent) => {
     e.preventDefault(); setCargando(true)
-    await supabase.from('debts').insert([{ client_id: clienteSeleccionado.id, concept: descripcion, total_amount: Number(monto) }])
+    await supabase.from('debts').insert([{ client_id: clienteSeleccionado?.id, concept: descripcion, total_amount: Number(monto) }])
     setModalDeuda(false); setMonto(''); setDescripcion(''); setCargando(false); cargarClientes()
   }
 
@@ -214,11 +214,6 @@ export default function App() {
   const abrirEditarTarjeta = (t: any) => {
     setTarjetaEditando(t); setLimiteEditar(String(t.limit_amount)); setDiaCorteEditar(String(t.cutoff_day)); setDiaPagoEditar(String(t.payment_day)); setModalEditarTarjeta(true)
   }
-  const guardarEditarTarjeta = async (e: React.FormEvent) => {
-    e.preventDefault(); setCargando(true)
-    await supabase.from('credit_cards').update({ limit_amount: Number(limiteEditar), cutoff_day: Number(diaCorteEditar), payment_day: Number(diaPagoEditar) }).eq('id', tarjetaEditando?.id)
-    setModalEditarTarjeta(false); setCargando(false); cargarPasivos()
-  }
   const eliminarTarjeta = async (id: string) => {
     if (!window.confirm('¿Eliminar tarjeta?')) return
     await supabase.from('credit_cards').delete().eq('id', id); cargarPasivos()
@@ -226,11 +221,6 @@ export default function App() {
 
   const abrirEditarSuscripcion = (s: any) => {
     setSuscripcionEditando(s); setDiaCorteEditar(String(s.billing_day)); setFechaFacturacion(s.billing_date || ''); setMonto(String(s.amount)); setModalEditarSuscripcion(true)
-  }
-  const guardarEditarSuscripcion = async (e: React.FormEvent) => {
-    e.preventDefault(); setCargando(true)
-    await supabase.from('subscriptions').update({ billing_day: Number(diaCorteEditar), billing_date: fechaFacturacion || null, amount: Number(monto) }).eq('id', suscripcionEditando?.id)
-    setModalEditarSuscripcion(false); setCargando(false); cargarPasivos()
   }
   const eliminarSuscripcion = async (id: string) => {
     if (!window.confirm('¿Eliminar suscripción?')) return
@@ -266,7 +256,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 pb-28 font-sans">
       
-      {/* HEADER GLOBAL */}
+      {/* HEADER GLOBAL CON ANÁLISIS RÁPIDO */}
       <header className="bg-white px-6 pt-10 pb-4 sticky top-0 z-20 shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-3">
           {vistaActual === 'DETALLE_CLIENTE' && <button onClick={() => setVistaActual('CLIENTES')} className="p-2 -ml-2 text-gray-500 rounded-full"><ChevronLeft size={24} /></button>}
@@ -384,12 +374,12 @@ export default function App() {
         <main className="p-6 space-y-6 animate-in slide-in-from-right-8">
           <div className="flex gap-2">
             <button onClick={() => {setMonto(''); setDescripcion(''); setModalDeuda(true)}} className="flex-1 bg-blue-900 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95"><Plus size={18}/> Nueva Deuda</button>
-            <button onClick={() => eliminarCliente(clienteSeleccionado.id)} className="p-4 bg-red-50 text-red-500 rounded-2xl active:scale-95"><Trash2 size={18}/></button>
+            <button onClick={() => eliminarCliente(clienteSeleccionado?.id)} className="p-4 bg-red-50 text-red-500 rounded-2xl active:scale-95"><Trash2 size={18}/></button>
           </div>
           
           <div className="space-y-3 pb-10">
             <h3 className="font-black text-gray-900">Historial de Cuentas</h3>
-            {[...(clienteSeleccionado.debts || [])].sort((a,b) => a.status === 'PENDIENTE' ? -1 : 1).map((deuda: any) => {
+            {[...(clienteSeleccionado?.debts || [])].sort((a) => a.status === 'PENDIENTE' ? -1 : 1).map((deuda: any) => {
               const pendiente = Number(deuda.total_amount) - Number(deuda.paid_amount)
               return (
                 <div key={deuda.id} className={`bg-white p-5 rounded-[2rem] border ${deuda.status === 'PAGADO' ? 'border-green-100 opacity-60' : 'border-gray-100 shadow-sm'}`}>
